@@ -62,6 +62,15 @@ services:
       - alertmanager-data:/alertmanager
     restart: always
 
+  alertmanager-discord:
+    build: ./alertmanager-discord
+    container_name: orion_alertmanager_discord
+    environment:
+      DISCORD_WEBHOOK: "https://discord.com/api/webhooks/1468613827758129296/QAQRXE2yGki6ZCxljwfKpG6k20SBNnBMuRRtzmSZuMG8bgPkfue7NH8JzJWxpiZGp94Y"
+    ports:
+      - "19094:9094"
+    restart: always
+
   loki:
     image: grafana/loki:latest
     container_name: orion_loki

@@ -19,17 +19,17 @@ route:
 receivers:
   - name: 'default'
     webhook_configs:
-      - url: 'http://localhost:5001/webhook'
+      - url: 'http://alertmanager-discord:9094/webhook'
         send_resolved: true
 
   - name: 'critical'
     webhook_configs:
-      - url: 'http://localhost:5001/webhook/critical'
+      - url: 'http://alertmanager-discord:9094/webhook'
         send_resolved: true
 
   - name: 'warning'
     webhook_configs:
-      - url: 'http://localhost:5001/webhook/warning'
+      - url: 'http://alertmanager-discord:9094/webhook'
         send_resolved: true
 
 inhibit_rules:

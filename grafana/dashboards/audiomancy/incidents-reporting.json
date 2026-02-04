@@ -78,7 +78,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "ALERTS{job=~\"Audiomancy.*\"}",
+          "expr": "ALERTS{job=~\"Audiomancy.*\",alertstate=\"firing\"}",
           "legendFormat": "{{alertname}} - {{severity}}",
           "range": true,
           "refId": "A"
