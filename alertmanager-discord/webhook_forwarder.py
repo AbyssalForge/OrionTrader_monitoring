@@ -114,5 +114,5 @@ if __name__ == '__main__':
     if not DISCORD_WEBHOOK:
         print("WARNING: DISCORD_WEBHOOK environment variable not set!")
 
-    print(f"Starting webhook forwarder on 0.0.0.0:9094")
-    app.run(host='0.0.0.0', port=9094, debug=False)
+    print(f"Starting webhook forwarder on 0.0.0.0:9098")
+    app.run(host='0.0.0.0', port=9098, debug=False)

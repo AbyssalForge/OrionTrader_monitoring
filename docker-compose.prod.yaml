@@ -49,7 +49,7 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/alertmanager.prod.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager
     restart: always
 
