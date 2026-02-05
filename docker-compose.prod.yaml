@@ -83,8 +83,31 @@ services:
       - loki
     restart: always
 
+  chaosd:
+    build: ./chaosd-daemon
+    container_name: orion_chaosd
+    network_mode: "container:wg-easy"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - chaosd-data:/var/lib/chaosd
+    privileged: true
+    restart: always
+
+  chaosd-ui:
+    build: ./chaosd-ui
+    container_name: orion_chaosd_ui
+    network_mode: "container:wg-easy"
+    environment:
+      CHAOSD_URL: "http://localhost:31767"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - chaosd
+    restart: always
+
 volumes:
   grafana-data:
   prometheus-data:
   alertmanager-data:
   loki-data:
+  chaosd-data:
