@@ -216,17 +216,63 @@ Configuration:
 
 ### Chaos Engineering avec Chaosd
 
-Chaosd permet de tester la résilience en injectant des pannes:
+Le chaos engineering est une discipline qui consiste à tester la résilience d'un système en injectant volontairement des pannes. Chaosd permet de simuler des défaillances réalistes et d'observer comment le système réagit.
 
-**Via l'interface web** (http://localhost:19096 ou http://10.8.0.1:8080):
-- Arrêter/redémarrer des conteneurs
-- Ajouter de la latence réseau
-- Simuler une charge CPU/mémoire
-- Tuer des processus
+#### Pourquoi le Chaos Engineering?
 
-**Via API**:
+- **Identifier les points faibles** avant qu'ils ne causent des incidents en production
+- **Valider les mécanismes de récupération** (auto-healing, failover)
+- **Tester les alertes** et s'assurer qu'elles se déclenchent correctement
+- **Former les équipes** à la gestion d'incidents
+- **Améliorer la confiance** dans la résilience du système
+
+#### Types de Tests de Chaos
+
+**1. Container Chaos** - Tests sur les conteneurs:
+- `container-stop`: Arrêter un conteneur (simule un crash)
+- `container-restart`: Redémarrer un conteneur
+- `container-kill`: Tuer brutalement un conteneur (SIGKILL)
+
+**2. Network Chaos** - Tests réseau:
+- `network-delay`: Ajouter de la latence (100ms, 500ms, 1s)
+- `network-loss`: Perte de paquets (simule un réseau instable)
+- `network-corrupt`: Corruption de paquets
+- `network-partition`: Isoler des conteneurs
+
+**3. Stress Chaos** - Tests de charge:
+- `cpu-stress`: Saturer le CPU (50%, 80%, 100%)
+- `memory-stress`: Saturer la mémoire
+- `io-stress`: Saturer les I/O disque
+
+**4. Process Chaos** - Tests sur les processus:
+- `process-kill`: Tuer un processus spécifique dans un conteneur
+
+#### Utilisation via l'Interface Web
+
+**Local**: http://localhost:19096
+**Production (VPN)**: http://10.8.0.1:8080
+
+L'interface permet de:
+1. Sélectionner le type d'attaque (container, network, stress, process)
+2. Choisir la cible (nom du conteneur)
+3. Configurer les paramètres (durée, intensité)
+4. Lancer l'attaque et observer les métriques dans Grafana
+
+**Exemple de scénario de test**:
+1. Ouvrir Grafana et les dashboards Audiomancy
+2. Dans Chaosd UI, arrêter `audiomancy-backend` pendant 60 secondes
+3. Observer dans Grafana:
+   - L'alerte "ServiceDown" se déclenche après 2 minutes
+   - Les logs d'erreur apparaissent dans le dashboard
+   - Le service redémarre automatiquement
+   - Les métriques reviennent à la normale
+
+#### Utilisation via API REST
+
+L'API Chaosd est accessible sur le port 31767 (exposé sur 19095 en local, ou 10.8.0.1:31767 via VPN).
+
+**Arrêter un conteneur**:
 ```bash
-# Arrêter un conteneur pendant 30 secondes
 curl -X POST http://10.8.0.1:31767/api/attack/container \
   -H "Content-Type: application/json" \
   -d '{
@@ -235,6 +281,153 @@ curl -X POST http://10.8.0.1:31767/api/attack/container \
     "duration": "30s"
   }'
 ```
+
+**Ajouter de la latence réseau**:
+```bash
+curl -X POST http://10.8.0.1:31767/api/attack/network \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "delay",
+    "container_names": ["audiomancy-frontend"],
+    "latency": "500ms",
+    "duration": "2m"
+  }'
+```
+
+**Stresser le CPU**:
+```bash
+curl -X POST http://10.8.0.1:31767/api/attack/stress \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "cpu",
+    "container_names": ["audiomancy-backend"],
+    "load": 80,
+    "duration": "5m"
+  }'
+```
+
+**Lister les attaques en cours**:
+```bash
+curl http://10.8.0.1:31767/api/experiments
+```
+
+**Arrêter une attaque**:
+```bash
+curl -X DELETE http://10.8.0.1:31767/api/experiments/{experiment_id}
+```
+
+#### Scénarios de Test Recommandés
+
+**Scénario 1: Crash du Backend**
+```bash
+# Objectif: Vérifier que l'alerte ServiceDown se déclenche
+# Durée: 3 minutes (doit dépasser le seuil de 2 minutes)
+
+curl -X POST http://10.8.0.1:31767/api/attack/container \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "container-stop",
+    "container_names": ["audiomancy-backend"],
+    "duration": "3m"
+  }'
+
+# Vérifier dans Grafana:
+# - Dashboard "Monitoring d'Incidents" affiche le service DOWN
+# - Alerte Discord envoyée
+# - Logs d'erreur visibles dans les dashboards
+```
+
+**Scénario 2: Latence Réseau**
+```bash
+# Objectif: Tester le comportement avec 500ms de latence
+# Observer si l'alerte HighLatency se déclenche
+
+curl -X POST http://10.8.0.1:31767/api/attack/network \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "delay",
+    "container_names": ["audiomancy-backend"],
+    "latency": "500ms",
+    "duration": "10m"
+  }'
+
+# Vérifier dans Grafana:
+# - Augmentation de la latence moyenne dans le dashboard Backend
+# - Alerte HighLatency si > 1s pendant 5 minutes
+```
+
+**Scénario 3: Surcharge CPU**
+```bash
+# Objectif: Vérifier la performance sous charge CPU élevée
+
+curl -X POST http://10.8.0.1:31767/api/attack/stress \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "cpu",
+    "container_names": ["audiomancy-backend"],
+    "load": 90,
+    "duration": "5m"
+  }'
+
+# Vérifier dans Grafana:
+# - Métriques CPU dans le dashboard système
+# - Alerte HighCPU si > 80% pendant 5 minutes
+# - Impact sur les temps de réponse
+```
+
+#### Intégration avec GitHub Actions
+
+Le déploiement automatique via GitHub Actions garantit une récupération rapide après un incident:
+
+1. **Déclenchement automatique**: Push sur `main` déclenche le workflow
+2. **Build des images**: Les conteneurs sont buildés et pushés sur GHCR
+3. **Déploiement sur VPS**: Pull et redémarrage automatique des services
+4. **Monitoring**: Les métriques remontent immédiatement dans Grafana
+
+**Test de récupération automatique**:
+```bash
+# 1. Déclencher une panne critique
+curl -X POST http://10.8.0.1:31767/api/attack/container \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "container-kill",
+    "container_names": ["audiomancy-backend", "audiomancy-frontend"]
+  }'
+
+# 2. Les conteneurs redémarrent automatiquement (restart: always)
+# 3. Observer dans Grafana le temps de récupération
+# 4. Vérifier que les alertes Discord ont été envoyées
+
+# 3. (Optionnel) Forcer un redéploiement complet via GitHub
+# Faire un commit vide pour déclencher le workflow:
+git commit --allow-empty -m "test: trigger redeployment"
+git push
+
+# 4. Surveiller dans Grafana:
+# - Temps de downtime total
+# - Temps de récupération
+# - Logs de redémarrage
+```
+
+#### Bonnes Pratiques
+
+1. **Commencer petit**: Tester d'abord sur un seul service avec des durées courtes
+2. **Observer avant d'agir**: Avoir Grafana ouvert pour voir les impacts en temps réel
+3. **Documenter les résultats**: Noter les temps de récupération et les alertes déclenchées
+4. **Tester hors heures de pointe**: Éviter de perturber les utilisateurs réels
+5. **Avoir un plan de rollback**: Savoir comment arrêter une attaque si nécessaire
+6. **Communiquer**: Prévenir l'équipe avant de lancer des tests de chaos en production
+7. **Automatiser progressivement**: Passer d'attaques manuelles à des tests automatisés
+
+#### Métriques de Résilience à Mesurer
+
+- **MTTR** (Mean Time To Recovery): Temps moyen de récupération après une panne
+- **MTBF** (Mean Time Between Failures): Temps moyen entre deux pannes
+- **Taux de disponibilité**: % de temps où le service est opérationnel
+- **Temps de détection**: Délai entre la panne et l'alerte
+- **Taux de faux positifs**: Alertes déclenchées sans réelle panne
+
+Ces métriques sont visibles dans les dashboards Grafana et permettent de mesurer l'amélioration continue de la résilience.
 
 ## Troubleshooting
 
