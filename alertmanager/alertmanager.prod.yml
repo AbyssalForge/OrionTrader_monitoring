@@ -19,17 +19,17 @@ route:
 receivers:
   - name: 'default'
     webhook_configs:
-      - url: 'http://localhost:9098/webhook'
+      - url: 'http://10.8.0.1:9098/webhook'
         send_resolved: true
 
   - name: 'critical'
     webhook_configs:
-      - url: 'http://localhost:9098/webhook'
+      - url: 'http://10.8.0.1:9098/webhook'
         send_resolved: true
 
   - name: 'warning'
     webhook_configs:
-      - url: 'http://localhost:9098/webhook'
+      - url: 'http://10.8.0.1:9098/webhook'
         send_resolved: true
 
 inhibit_rules:
