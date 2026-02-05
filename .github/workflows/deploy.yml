@@ -27,16 +27,19 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
           WG_PASSWORD: ${{ secrets.WG_PASSWORD }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: |
-          ssh -p $VPS_PORT $VPS_USERNAME@$VPS_HOST << 'ENDSSH'
+          ssh -p $VPS_PORT $VPS_USERNAME@$VPS_HOST << ENDSSH
             # Définir le répertoire de l'application
-            APP_DIR="$HOME/monitoring"
+            APP_DIR="\$HOME/monitoring"
 
             # Créer le répertoire s'il n'existe pas
-            mkdir -p $APP_DIR
+            mkdir -p \$APP_DIR
 
             # Aller dans le répertoire
-            cd $APP_DIR
+            cd \$APP_DIR
 
             # Cloner ou mettre à jour le repository
             if [ -d ".git" ]; then
@@ -49,20 +52,40 @@ jobs:
               git clone https://github.com/${{ github.repository }} .
             fi
 
+            # Créer le fichier .env avec les secrets
+            echo "Création du fichier .env..."
+            echo "# Grafana Configuration" > .env
+            echo "GRAFANA_ADMIN_USER=$GRAFANA_ADMIN_USER" >> .env
+            echo "GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD" >> .env
+            echo "GRAFANA_HTTP_PORT=9091" >> .env
+            echo "" >> .env
+            echo "# Discord Webhook for Alertmanager" >> .env
+            echo "DISCORD_WEBHOOK_URL=$DISCORD_WEBHOOK_URL" >> .env
+            echo "" >> .env
+            echo "# Ports Configuration" >> .env
+            echo "PROMETHEUS_PORT=19090" >> .env
+            echo "GRAFANA_PORT=19091" >> .env
+            echo "PUSHGATEWAY_PORT=19092" >> .env
+            echo "ALERTMANAGER_PORT=19093" >> .env
+            echo "ALERTMANAGER_DISCORD_PORT=19094" >> .env
+            echo "CHAOSD_PORT=19095" >> .env
+            echo "CHAOSD_UI_PORT=19096" >> .env
+            echo "LOKI_PORT=19100" >> .env
+
             # Arrêter les conteneurs existants
             echo "Arrêt des conteneurs..."
-            sudo docker-compose down || true
+            sudo docker-compose -f docker-compose.prod.yaml down || true
 
             # Nettoyer les images non utilisées
             sudo docker system prune -f
 
             # Démarrer les conteneurs
             echo "Démarrage des conteneurs..."
-            sudo docker-compose up -d --build
+            sudo docker-compose -f docker-compose.prod.yaml up -d --build
 
             # Afficher le status
             echo "Status des conteneurs:"
-            sudo docker-compose ps
+            sudo docker-compose -f docker-compose.prod.yaml ps
           ENDSSH
 
       - name: Verify Deployment
@@ -74,10 +97,10 @@ jobs:
           ssh -p $VPS_PORT $VPS_USERNAME@$VPS_HOST << 'ENDSSH'
             cd $HOME/monitoring
             echo "=== Vérification des conteneurs ==="
-            sudo docker-compose ps
+            sudo docker-compose -f docker-compose.prod.yaml ps
             echo ""
             echo "=== Logs récents ==="
-            sudo docker-compose logs --tail=50
+            sudo docker-compose -f docker-compose.prod.yaml logs --tail=50
           ENDSSH
 
       - name: Cleanup

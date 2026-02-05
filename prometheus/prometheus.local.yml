@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - "alert.rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'pushgateway'
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9092']
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:9091']
+
+  - job_name: 'Audiomancy_backend'
+    static_configs:
+      - targets: ['audiomancy-backend:8000']
+
+  - job_name: 'Audiomancy_frontend'
+    static_configs:
+      - targets: ['audiomancy-frontend:3000']
+    metrics_path: '/api/metrics'
+    scrape_interval: 15s

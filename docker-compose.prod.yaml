@@ -2,33 +2,28 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: orion_prometheus
+    network_mode: "container:wg-easy"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.listen-address=:9090'
-    ports:
-      - "${PROMETHEUS_PORT}:9090"
     volumes:
-      - ./prometheus/prometheus.local.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/alert.rules.local.yml:/etc/prometheus/alert.rules.yml:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
       - prometheus-data:/prometheus
-    networks:
-      - default
-      - audiomancy-network
     restart: always
 
   grafana:
     image: grafana/grafana:latest
     container_name: orion_grafana
+    network_mode: "container:wg-easy"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_INSTALL_PLUGINS: ""
       GF_SERVER_HTTP_PORT: ${GRAFANA_HTTP_PORT}
-    ports:
-      - "${GRAFANA_PORT}:${GRAFANA_HTTP_PORT}"
     depends_on:
       - prometheus
     restart: always
@@ -41,20 +36,18 @@ services:
   pushgateway:
     image: prom/pushgateway:latest
     container_name: orion_pushgateway
+    network_mode: "container:wg-easy"
     command:
       - '--web.listen-address=:9092'
-    ports:
-      - "${PUSHGATEWAY_PORT}:9092"
     restart: always
 
   alertmanager:
     image: prom/alertmanager:latest
     container_name: orion_alertmanager
+    network_mode: "container:wg-easy"
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
-    ports:
-      - "${ALERTMANAGER_PORT}:9093"
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager
@@ -63,17 +56,15 @@ services:
   alertmanager-discord:
     build: ./alertmanager-discord
     container_name: orion_alertmanager_discord
+    network_mode: "container:wg-easy"
     environment:
       DISCORD_WEBHOOK: ${DISCORD_WEBHOOK_URL}
-    ports:
-      - "${ALERTMANAGER_DISCORD_PORT}:9094"
     restart: always
 
   loki:
     image: grafana/loki:latest
     container_name: orion_loki
-    ports:
-      - "${LOKI_PORT}:3100"
+    network_mode: "container:wg-easy"
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
       - loki-data:/loki
@@ -83,42 +74,13 @@ services:
   promtail:
     image: grafana/promtail:latest
     container_name: orion_promtail
+    network_mode: "container:wg-easy"
     volumes:
       - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
-    networks:
-      - default
-      - audiomancy-network
-    restart: always
-
-  chaosd:
-    build: ./chaosd-daemon
-    container_name: orion_chaosd
-    ports:
-      - "${CHAOSD_PORT}:31767"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:rw
-      - chaosd-data:/var/lib/chaosd
-    privileged: true
-    restart: always
-    networks:
-      - default
-      - audiomancy-network
-
-  chaosd-ui:
-    build: ./chaosd-ui
-    container_name: orion_chaosd_ui
-    ports:
-      - "${CHAOSD_UI_PORT}:8080"
-    environment:
-      CHAOSD_URL: "http://chaosd:31767"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - chaosd
     restart: always
 
 volumes:
@@ -126,9 +88,3 @@ volumes:
   prometheus-data:
   alertmanager-data:
   loki-data:
-  chaosd-data:
-
-networks:
-  audiomancy-network:
-    external: true
-    name: audiomancy_audiomancy-network
