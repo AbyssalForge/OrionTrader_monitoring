@@ -76,7 +76,7 @@ services:
     container_name: orion_promtail
     network_mode: "container:wg-easy"
     volumes:
-      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./promtail/promtail-config.prod.yml:/etc/promtail/config.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:

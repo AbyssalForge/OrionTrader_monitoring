@@ -1,0 +1,67 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://10.8.0.1:3100/loki/api/v1/push
+
+scrape_configs:
+  # Collecte des logs des conteneurs Docker
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Nom du conteneur
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+
+      # Image Docker
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'
+
+      # Labels Docker
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: 'project'
+
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+
+      # Filtrer uniquement les conteneurs du projet
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        regex: 'oriontrader_monitoring|audiomancy'
+        action: keep
+
+    pipeline_stages:
+      # Extraction du niveau de log
+      - regex:
+          expression: '(?P<level>DEBUG|INFO|WARN|ERROR|CRITICAL|FATAL)'
+      - labels:
+          level:
+
+      # Anonymisation des données personnelles (RGPD - C20)
+      - replace:
+          expression: '(?i)(email|mail)[:=]\s*([^\s,}]+)'
+          replace: '${1}=***REDACTED***'
+
+      - replace:
+          expression: '(?i)(password|passwd|pwd|token|apikey|api_key|secret)[:=]\s*([^\s,}]+)'
+          replace: '${1}=***REDACTED***'
+
+      - replace:
+          expression: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+          replace: '***EMAIL_REDACTED***'
+
+      # Extraction des métriques depuis les logs
+      - metrics:
+          error_count:
+            type: Counter
+            description: "Nombre d'erreurs dans les logs"
+            source: level
+            config:
+              value: 'ERROR'
+              action: inc
