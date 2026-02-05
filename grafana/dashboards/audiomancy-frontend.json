@@ -172,7 +172,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 24,
         "x": 0,
         "y": 10
@@ -250,7 +250,7 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 18
+        "y": 17
       },
       "id": 3,
       "options": {
@@ -315,7 +315,7 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 18
+        "y": 17
       },
       "id": 4,
       "options": {
@@ -376,7 +376,7 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 18
+        "y": 17
       },
       "id": 5,
       "options": {
@@ -425,5 +425,5 @@
   "timezone": "",
   "title": "Audiomancy Frontend",
   "uid": "audiomancy-frontend",
-  "version": 4
+  "version": 5
 }
