@@ -12,6 +12,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - ./prometheus/fastapi_token:/etc/prometheus/fastapi_token:ro
       - prometheus-data:/prometheus
     restart: always
 

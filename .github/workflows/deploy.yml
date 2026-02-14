@@ -32,6 +32,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          FASTAPI_MASTER_TOKEN: ${{ secrets.FASTAPI_MASTER_TOKEN }}
         run: |
           ssh -p $VPS_PORT $VPS_USERNAME@$VPS_HOST << ENDSSH
             # Définir le répertoire de l'application
@@ -73,6 +74,10 @@ jobs:
             echo "CHAOSD_PORT=19095" >> .env
             echo "CHAOSD_UI_PORT=19096" >> .env
             echo "LOKI_PORT=19100" >> .env
+
+            # Créer le fichier token FastAPI pour Prometheus
+            echo "$FASTAPI_MASTER_TOKEN" > prometheus/fastapi_token
+            chmod 600 prometheus/fastapi_token
 
             # Arrêter les conteneurs existants
             echo "Arrêt des conteneurs..."

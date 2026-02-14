@@ -41,4 +41,6 @@ scrape_configs:
     scheme: https
     tls_config:
       insecure_skip_verify: true
+    authorization:
+      credentials_file: /etc/prometheus/fastapi_token
     scrape_interval: 15s
