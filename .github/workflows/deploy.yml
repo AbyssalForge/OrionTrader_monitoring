@@ -45,13 +45,13 @@ jobs:
 
             # Cloner ou mettre à jour le repository
             if [ -d ".git" ]; then
-              echo "Mise à jour du repository..."
+              echo "Mise à jour du repository (branche: ${{ github.ref_name }})..."
               git fetch --all
-              git reset --hard origin/main
-              git pull origin main
+              git reset --hard origin/${{ github.ref_name }}
+              git pull origin ${{ github.ref_name }}
             else
-              echo "Clonage du repository..."
-              git clone https://github.com/${{ github.repository }} .
+              echo "Clonage du repository (branche: ${{ github.ref_name }})..."
+              git clone --branch ${{ github.ref_name }} https://github.com/${{ github.repository }} .
             fi
 
             # Créer le fichier .env avec les secrets
