@@ -77,7 +77,7 @@ jobs:
 
             # Créer le fichier token FastAPI pour Prometheus
             echo "$FASTAPI_MASTER_TOKEN" > prometheus/fastapi_token
-            chmod 600 prometheus/fastapi_token
+            chmod 644 prometheus/fastapi_token
 
             # Arrêter les conteneurs existants
             echo "Arrêt des conteneurs..."
