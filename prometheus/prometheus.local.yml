@@ -33,3 +33,10 @@ scrape_configs:
       - targets: ['audiomancy-frontend:3000']
     metrics_path: '/api/metrics'
     scrape_interval: 15s
+
+  # Réseau requis : oriontrader_default doit être déclaré en external dans docker-compose.yaml
+  - job_name: 'OrionTrader_fastapi'
+    static_configs:
+      - targets: ['fastapi:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
