@@ -105,8 +105,8 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "expr": "sum by (route) (rate({container=\"audiomancy-frontend\"} | regexp \"(?P<method>GET|POST|PUT|DELETE|PATCH)\\\\s+(?P<route>/[^\\\\s?]*)\\\\s+\\\\d{3}\" | route != \"\" | route !~ \"(/health|/metrics|/api/metrics)\" | line_format \"{{.route}}\" [1m]))",
-          "legendFormat": "{{route}}",
+          "expr": "sum by (path) (rate({container=\"audiomancy-frontend\"} | json | path != \"\" | path !~ \"(/health|/_next/.*|/favicon.ico|/api/metrics)\" [1m]))",
+          "legendFormat": "{{path}}",
           "refId": "A"
         }
       ],
@@ -196,22 +196,114 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} |~ \"\\\\s2[0-9]{2}\\\\s\" [1m]))",
+          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} | json | status >= 200 | status < 300 [1m]))",
           "legendFormat": "2xx Success",
           "refId": "A"
         },
         {
-          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} |~ \"\\\\s4[0-9]{2}\\\\s\" [1m]))",
+          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} | json | status >= 400 | status < 500 [1m]))",
           "legendFormat": "4xx Client Error",
           "refId": "B"
         },
         {
-          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} |~ \"\\\\s5[0-9]{2}\\\\s\" [1m]))",
+          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} | json | status >= 500 [1m]))",
           "legendFormat": "5xx Server Error",
           "refId": "C"
         }
       ],
       "title": "Frontend - Codes HTTP par minute",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "ms",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "expr": "avg by (path) (avg_over_time({container=\"audiomancy-frontend\"} | json | unwrap duration_ms [1m]))",
+          "legendFormat": "{{path}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Frontend - Durée moyenne par route (ms)",
       "type": "timeseries"
     },
     {
@@ -250,7 +342,7 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 17
+        "y": 24
       },
       "id": 3,
       "options": {
@@ -272,7 +364,7 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} |~ \"\\\\s2[0-9]{2}\\\\s\" [5m]))",
+          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} | json | status >= 200 | status < 300 [5m]))",
           "refId": "A"
         }
       ],
@@ -315,7 +407,7 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 17
+        "y": 24
       },
       "id": 4,
       "options": {
@@ -337,7 +429,7 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} |~ \"\\\\s4[0-9]{2}\\\\s\" [5m]))",
+          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} | json | status >= 400 | status < 500 [5m]))",
           "refId": "A"
         }
       ],
@@ -376,7 +468,7 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 17
+        "y": 24
       },
       "id": 5,
       "options": {
@@ -398,7 +490,7 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} |~ \"\\\\s5[0-9]{2}\\\\s\" [5m]))",
+          "expr": "sum(count_over_time({container=\"audiomancy-frontend\"} | json | status >= 500 [5m]))",
           "refId": "A"
         }
       ],
@@ -425,5 +517,5 @@
   "timezone": "",
   "title": "Audiomancy Frontend",
   "uid": "audiomancy-frontend",
-  "version": 5
+  "version": 6
 }
