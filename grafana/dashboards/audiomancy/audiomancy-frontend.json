@@ -298,7 +298,7 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "expr": "avg by (path) (avg_over_time({container=\"audiomancy-frontend\"} | json | unwrap duration_ms [1m]))",
+          "expr": "avg by (path) (avg_over_time({container=\"audiomancy-frontend\"} | json | path != \"\" | path !~ \"(/health|/_next/.*|/favicon.ico|/api/metrics)\" | path !~ \".*\\\\.(json|png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|map|webp|txt|xml)$\" | unwrap duration_ms [1m]))",
           "legendFormat": "{{path}}",
           "refId": "A"
         }
