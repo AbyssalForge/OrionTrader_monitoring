@@ -70,47 +70,47 @@ groups:
   - name: ml_model_monitoring
     interval: 60s
     rules:
-      - alert: ModelPredictionLatencyHigh
-        expr: histogram_quantile(0.95, rate(model_prediction_duration_seconds_bucket[5m])) > 1
+      - alert: DeepSeekLatencyHigh
+        expr: histogram_quantile(0.95, rate(deepseek_latency_seconds_bucket{job=~"Audiomancy_.*"}[5m])) > 5
         for: 5m
         labels:
           severity: warning
           component: ml_model
         annotations:
-          summary: "ML model prediction latency is high"
-          description: "95th percentile prediction latency is {{ $value }}s"
-          incident_type: "Model Performance"
-          remediation: "1. Check model complexity\n2. Review input data size\n3. Consider model optimization or caching"
+          summary: "DeepSeek API latency is high"
+          description: "95th percentile DeepSeek response time is {{ $value }}s"
+          incident_type: "LLM Performance"
+          remediation: "1. Check DeepSeek API status\n2. Review prompt complexity\n3. Consider caching frequent requests"
 
-      - alert: ModelAccuracyDrop
-        expr: model_accuracy < 0.85
-        for: 10m
+      - alert: DeepSeekErrorRateHigh
+        expr: rate(deepseek_errors_total{job=~"Audiomancy_.*"}[5m]) > 0.05
+        for: 5m
         labels:
           severity: critical
           component: ml_model
         annotations:
-          summary: "ML model accuracy has dropped"
-          description: "Model accuracy is {{ $value | humanizePercentage }}, below threshold of 85%"
-          incident_type: "Model Drift Detected"
-          remediation: "1. Check for data drift\n2. Verify input data quality\n3. Consider model retraining"
+          summary: "High DeepSeek API error rate"
+          description: "DeepSeek error rate is {{ $value | humanizePercentage }}"
+          incident_type: "LLM Errors"
+          remediation: "1. Check API key validity\n2. Review error types in logs\n3. Check rate limits"
 
-      - alert: HighModelErrorRate
-        expr: rate(model_prediction_errors_total[5m]) > 0.01
-        for: 5m
+      - alert: DeepSeekTokenUsageHigh
+        expr: rate(deepseek_tokens_used_total{job=~"Audiomancy_.*"}[1h]) > 10000
+        for: 10m
         labels:
           severity: warning
           component: ml_model
         annotations:
-          summary: "High ML model error rate"
-          description: "Model error rate is {{ $value | humanizePercentage }}"
-          incident_type: "Model Errors"
-          remediation: "1. Check input validation\n2. Review model version\n3. Verify dependencies"
+          summary: "DeepSeek token consumption is high"
+          description: "Token consumption rate is {{ $value }} tokens/hour"
+          incident_type: "LLM Cost Spike"
+          remediation: "1. Review prompt sizes\n2. Check for abnormal usage patterns\n3. Consider prompt optimization"
 
   - name: security_monitoring
     interval: 30s
     rules:
       - alert: TooManyAuthenticationFailures
-        expr: rate(authentication_failures_total[5m]) > 0.1
+        expr: rate(auth_attempts_total{job=~"Audiomancy_.*", result="failure"}[5m]) > 0.1
         for: 3m
         labels:
           severity: warning

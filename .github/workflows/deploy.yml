@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - monitoring
+      - monitoring_orrionTrader
   workflow_dispatch:
 
 jobs:
@@ -31,6 +32,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          FASTAPI_MASTER_TOKEN: ${{ secrets.FASTAPI_MASTER_TOKEN }}
         run: |
           ssh -p $VPS_PORT $VPS_USERNAME@$VPS_HOST << ENDSSH
             # Définir le répertoire de l'application
@@ -44,13 +46,13 @@ jobs:
 
             # Cloner ou mettre à jour le repository
             if [ -d ".git" ]; then
-              echo "Mise à jour du repository..."
+              echo "Mise à jour du repository (branche: ${{ github.ref_name }})..."
               git fetch --all
-              git reset --hard origin/main
-              git pull origin main
+              git reset --hard origin/${{ github.ref_name }}
+              git pull origin ${{ github.ref_name }}
             else
-              echo "Clonage du repository..."
-              git clone https://github.com/${{ github.repository }} .
+              echo "Clonage du repository (branche: ${{ github.ref_name }})..."
+              git clone --branch ${{ github.ref_name }} https://github.com/${{ github.repository }} .
             fi
 
             # Créer le fichier .env avec les secrets
@@ -72,6 +74,10 @@ jobs:
             echo "CHAOSD_PORT=19095" >> .env
             echo "CHAOSD_UI_PORT=19096" >> .env
             echo "LOKI_PORT=19100" >> .env
+
+            # Créer le fichier token FastAPI pour Prometheus
+            echo "$FASTAPI_MASTER_TOKEN" > prometheus/fastapi_token
+            chmod 644 prometheus/fastapi_token
 
             # Arrêter les conteneurs existants
             echo "Arrêt des conteneurs..."
